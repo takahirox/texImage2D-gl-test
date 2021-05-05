@@ -1,0 +1,86 @@
+<html>
+  <head>
+    <title>WebGL texImage2D() video upload test</title>
+  </head>
+  <body>
+    <h1>WebGL texImage2D() video upload test</h1>
+    <select id="videoTypeSelect">
+      <option value="mp4" selected>movie.mp4</option>
+      <option value="webm">movie.webm</option>
+      <option value="ogv">movie.ogv</option>
+    </select>
+    <button id="runButton">run</button>
+    <br />
+    <p>How to test</p>
+    <ul>
+      <li>Open the web browser console</li>
+      <li>Select video format type and click run button</li>
+      <li>Check the console if gl.texImage2D() causes an error</li>
+      <li>Note that video does <strong>not</strong> be displayed while audio comes out</li>
+    </ul>
+    <p>Videos are from <a href="https://www.w3schools.com/html/html5_video.asp">W3 Schools</a></p>
+    <script>
+      const selectElement = document.getElementById('videoTypeSelect');
+      const runButton = document.getElementById('runButton');
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl2');
+      const texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+
+      let videoElement = null;
+
+      const onClick = _e => {
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        const extension = selectedOption.value;
+        runButton.disabled = true;
+        play('movie.' + extension);
+      };
+
+      runButton.addEventListener('click', onClick);
+
+      const play = videoFileName => {
+        if (videoElement) {
+          videoElement.pause();
+        }
+
+        videoElement = document.createElement('video'); 
+        const onError = error => {
+          console.error(error);
+          runButton.disabled = false;
+        };
+        const onCanplaythrough = event => {
+          videoElement.removeEventListener('canplaythrough', onCanplaythrough);
+          videoElement.play().catch(onError);
+          runButton.disabled = false;
+        };
+        videoElement.addEventListener('error', onError);
+        videoElement.addEventListener('canplaythrough', onCanplaythrough);
+        videoElement.loop = true;
+        videoElement.src = videoFileName;
+        videoElement.load();
+      };
+
+      const run = () => {
+        requestAnimationFrame(run);
+
+        if (!videoElement || videoElement.readyState < videoElement.HAVE_CURRENT_DATA) {
+          return;
+        }
+
+        gl.texImage2D(
+          gl.TEXTURE_2D, // target
+          0, // level
+          gl.RGB, // internalformat
+          videoElement.videoWitht, // width
+          videoElement.videoHeight, // height
+          0, // border
+          gl.RGB, // format
+          gl.UNSIGNED_BYTE, // type
+          videoElement // source
+        );
+      };
+
+      run();
+    </script>
+  </body>
+</html>
